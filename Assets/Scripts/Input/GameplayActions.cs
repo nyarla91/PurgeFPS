@@ -253,8 +253,8 @@ public partial class @GameplayActions : IInputActionCollection2, IDisposable
                     ""id"": ""f579237c-db35-49c9-a56c-378a7e2e8850"",
                     ""path"": ""<Gamepad>/leftTrigger"",
                     ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
+                    ""processors"": ""AxisDeadzone(min=0.05)"",
+                    ""groups"": ""Gamepad"",
                     ""action"": ""Aim"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false

@@ -8,7 +8,9 @@ namespace Gameplay.Entity
     public class Movable : LazyGetComponent<CharacterController>
     {
         [SerializeField] private float _gravity;
-        
+        [SerializeField] private float _coyoteTime;
+
+        private float _timeInAir;
         private Watch<bool> _isGrounded;
 
         public bool IsGrounded => _isGrounded;
@@ -54,7 +56,8 @@ namespace Gameplay.Entity
         {
             if (Pause.IsPaused)
                 return;
-            _isGrounded.Value = Lazy.isGrounded;
+            _timeInAir = Lazy.isGrounded ? 0 : (_timeInAir + Time.fixedDeltaTime);
+            _isGrounded.Value = _timeInAir < _coyoteTime;
             Lazy.Move(Velocity * Time.fixedDeltaTime);
             UpdateFallSpeed();
         }
@@ -63,7 +66,7 @@ namespace Gameplay.Entity
         {
             if (Pause.IsPaused)
                 return;
-            if (IsGrounded)
+            if (Lazy.isGrounded)
             {
                 Velocity = Velocity.WithY(0);
             }

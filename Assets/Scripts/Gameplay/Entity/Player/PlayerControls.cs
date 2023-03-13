@@ -10,7 +10,6 @@ namespace Gameplay.Entity.Player
 {
     public class PlayerControls : LazyGetComponent<PlayerComposition>
     {
-        private DeviceWatcher _deviceWatcher;
         private GameplayActions _actions;
         public SettingsConfig Config { get; private set; }
 
@@ -20,7 +19,7 @@ namespace Gameplay.Entity.Player
             {
                 Vector2 input = _actions.Player.Camera.ReadValue<Vector2>();
 
-                if (_deviceWatcher.CurrentInputScheme == InputScheme.KeyboardMouse)
+                if (DeviceWatcher.CurrentInputScheme == InputScheme.KeyboardMouse)
                 {
                     input *= new Vector2(Config.KeyboardMouse.GetSettingValue("sensitivity x"), Config.KeyboardMouse.GetSettingValue("sensitivity y"));
                     return input;
@@ -101,29 +100,49 @@ namespace Gameplay.Entity.Player
             }
         }
 
-        public event Action OnJumo;
-        public event Action OnCharge;
+        public event Action Jumped;
+        public event Action Charged;
+        public event Action ToggledAim;
+        
+        [Inject] private DeviceWatcher DeviceWatcher { get; set; }
+        [Inject] private Pause Pause { get; set; }
 
         [Inject]
-        private void Construct(GameplayActions actions, DeviceWatcher deviceWatcher, Settings.Settings settings)
+        private void Construct(GameplayActions actions, Settings.Settings settings)
         {
-            _deviceWatcher = deviceWatcher;
             _actions = actions;
             _actions.Enable();
             
-            _actions.Player.Jump.started += OnJumoInvoke;
-            _actions.Player.Charge.started += OnChargeInvoke;
+            _actions.Player.Jump.started += JumoedInvoke;
+            _actions.Player.Charge.started += ChargedInvoke;
+            _actions.Player.Aim.started += ToggledAimInvoke;
+            _actions.Player.Aim.canceled += ToggledAimInvoke;
 
             Config = settings.Config;
         }
 
-        private void OnJumoInvoke(InputAction.CallbackContext _) => OnJumo?.Invoke();
-        private void OnChargeInvoke(InputAction.CallbackContext _) => OnCharge?.Invoke();
+        private void JumoedInvoke(InputAction.CallbackContext _)
+        {
+            if (Pause.IsPaused)
+                return;
+            Jumped?.Invoke();
+        }
+
+        private void ChargedInvoke(InputAction.CallbackContext _)
+        {
+            if (Pause.IsPaused)
+                return;
+            Charged?.Invoke();
+        }
+
+        private void ToggledAimInvoke(InputAction.CallbackContext _) => ToggledAim?.Invoke();
 
         private void OnDestroy()
         {
-            _actions.Player.Jump.started += OnJumoInvoke;
-            _actions.Player.Charge.started += OnChargeInvoke;
+            _actions.Player.Jump.started -= JumoedInvoke;
+            _actions.Player.Charge.started -= ChargedInvoke;
+            _actions.Player.Aim.started -= ToggledAimInvoke;
+            _actions.Player.Aim.canceled -= ToggledAimInvoke;
         }
         
         private Vector2 GetScreenGyroDelta(bool worldSpace)

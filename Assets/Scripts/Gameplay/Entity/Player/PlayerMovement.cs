@@ -52,8 +52,8 @@ namespace Gameplay.Entity.Player
 
         private void Awake()
         {
-            Lazy.Controls.OnJumo += JumpOrDash;
-            Lazy.Controls.OnCharge += TryCharge;
+            Lazy.Controls.Jumped += JumpOrDash;
+            Lazy.Controls.Charged += TryCharge;
 
             _movable.Grounded += () => _dashReady = true;
         }
@@ -69,9 +69,9 @@ namespace Gameplay.Entity.Player
         private IEnumerator Charge()
         {
             Vector3 direction = Lazy.Vision.CameraTransform.forward;
-            for (float i = 0; i < 1; i += Time.fixedDeltaTime / _dashDuration)
+            for (float i = 0; i < 1; i += Time.fixedDeltaTime / _chargeDuration)
             {
-                _movable.SetVelocity(direction * _dashSpeed * _dashSpeedCurve.Evaluate(i));
+                _movable.SetVelocity(direction * _chargeSpeed * _chargeSpeedCurve.Evaluate(i));
                 yield return new WaitForFixedUpdate();
             }
             _movementStates.TryExitState(ChargeState);

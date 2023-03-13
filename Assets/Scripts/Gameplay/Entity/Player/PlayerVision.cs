@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using Extentions;
 using UnityEngine;
 using Zenject;
@@ -14,7 +15,8 @@ namespace Gameplay.Entity.Player
 
         private Coroutine _turnAroundCoroutine;
         private Transform _cameraTransform;
-
+        private bool _aiming;
+        
         public Camera Camera => _camera;
         public Transform CameraTransform => _cameraTransform;
 
@@ -52,6 +54,7 @@ namespace Gameplay.Entity.Player
         {
             if (Pause.IsPaused)
                 return;
+            delta = delta / _standartFOV * _camera.fieldOfView;
             float verticalAngle = _cameraTransform.localRotation.eulerAngles.x;
             verticalAngle -= delta.y;
             verticalAngle = verticalAngle.ClampAngle(275, 85);
@@ -61,8 +64,14 @@ namespace Gameplay.Entity.Player
 
         private void Awake()
         {
-            Controls.OnTurnAround += TryTurnAround;
             _cameraTransform = _camera.transform;
+            Controls.ToggledAim += () => _aiming = !_aiming;
+        }
+
+        private void FixedUpdate()
+        {
+            float targetFOV = _aiming ? _zoomFOV : _standartFOV;
+            _camera.fieldOfView = Mathf.Lerp(_camera.fieldOfView, targetFOV, 0.3f);
         }
 
         private void Update()
