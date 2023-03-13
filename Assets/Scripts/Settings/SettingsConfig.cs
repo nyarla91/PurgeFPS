@@ -11,12 +11,14 @@ namespace Settings
         [SerializeField] private SettingsSection _game;
         [SerializeField] private SettingsSection _keyboardMouse;
         [SerializeField] private SettingsSection _gamepad;
+        [SerializeField] private SettingsSection _gyro;
         
         public SettingsSection Video => _video;
         public SettingsSection Audio => _audio;
         public SettingsSection Game => _game;
         public SettingsSection Gamepad => _gamepad;
         public SettingsSection KeyboardMouse => _keyboardMouse;
+        public SettingsSection Gyro => _gyro;
         
         public SettingsSection GetSection(SettingsSectionLabel label)
         {
@@ -27,6 +29,7 @@ namespace Settings
                 SettingsSectionLabel.Game => Game,
                 SettingsSectionLabel.KeyboardMouse => KeyboardMouse,
                 SettingsSectionLabel.Gamepad => Gamepad,
+                SettingsSectionLabel.Gyro => Gyro,
                 _ => throw new ArgumentOutOfRangeException(nameof(label), label, null)
             };
         }
@@ -39,5 +42,6 @@ namespace Settings
         Game,
         KeyboardMouse,
         Gamepad,
+        Gyro,
     }
 }

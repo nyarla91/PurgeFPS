@@ -1,7 +1,9 @@
-﻿using Extentions;
+﻿using System.Collections;
+using Extentions;
 using Localization;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using Zenject;
 
 namespace Settings.UI
@@ -10,9 +12,9 @@ namespace Settings.UI
     {
         [SerializeField] private LocalizedString _prefix;
         [SerializeField] private LocalizedString _suffix;
-        
+
         [Inject] private Settings Settings { get; set; }
-        
+
         public void ApplyValue(float value)
         {
             int language = Settings.Config.Game.GetSettingValue("language"); 

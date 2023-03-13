@@ -9,6 +9,8 @@ namespace Gameplay.Entity.Player
     {
         [SerializeField] private Camera _camera;
         [SerializeField] private float _turnAroundSpeed;
+        [SerializeField] private float _standartFOV;
+        [SerializeField] private float _zoomFOV;
 
         private Coroutine _turnAroundCoroutine;
         private Transform _cameraTransform;

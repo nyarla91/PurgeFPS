@@ -16,6 +16,8 @@ namespace Settings
             pair.Value = value;
         }
 
+        public float GetSettingPercent(string setting) => (float) GetSettingValue(setting) / 100;
+
         public int GetSettingValue(string setting)
         {
             ValidateSetting(setting);

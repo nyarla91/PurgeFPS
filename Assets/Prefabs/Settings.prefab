@@ -115,3 +115,17 @@ MonoBehaviour:
           _value: 0
         - _key: deadzone
           _value: 10
+    _gyro:
+      _settings:
+        _dynamic: 1
+        _pairs:
+        - _key: enabled
+          _value: 1
+        - _key: world space
+          _value: 1
+        - _key: deadzone
+          _value: 0
+        - _key: scale x
+          _value: 100
+        - _key: scale y
+          _value: 100

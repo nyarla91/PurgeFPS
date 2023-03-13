@@ -128,6 +128,11 @@ namespace Input
             int handle = devices[0];
             JSL.JslSetCallback(DualshockMotion.ReportJoyshock);
         }
+
+        private void OnDestroy()
+        {
+            JSL.JslDisconnectAndDisposeAll();
+        }
     }
 
     public enum GamepadModel

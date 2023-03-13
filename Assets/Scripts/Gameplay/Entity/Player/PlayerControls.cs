@@ -1,6 +1,4 @@
-﻿using System;
-using System.Reflection;
-using Extentions;
+﻿using Extentions;
 using Input;
 using Settings;
 using UnityEngine;
@@ -32,7 +30,7 @@ namespace Gameplay.Entity.Player
                 input = InvertAxes(input);
                 input = ApplySensivity(input);
                 //input = ApplyAimAssist(input);
-                //input = ApplyGyro(input);
+                input = ApplyGyro(input);
                 
                 return input;
 
@@ -80,15 +78,15 @@ namespace Gameplay.Entity.Player
                 
                 Vector2 ApplyGyro(Vector2 originInput)
                 {
-                    if (!Config.Gamepad.IsSettingToggled("gyro enabled"))
+                    if (!Config.Gyro.IsSettingToggled("enabled"))
                         return originInput;
                     
-                    Vector2 gyroAxes = GetScreenGyroDelta(Config.Gamepad.IsSettingToggled("gyro world space"));
-                    if (gyroAxes.magnitude < Config.Gamepad.GetSettingValue("gyro deadzone"))
+                    Vector2 gyroAxes = GetScreenGyroDelta(Config.Gyro.IsSettingToggled("world space"));
+                    if (gyroAxes.magnitude < Config.Gyro.GetSettingValue("deadzone"))
                         return originInput;
                     
-                    gyroAxes.x *= Config.Gamepad.GetSettingValue("gyro horizontal scale");
-                    originInput += gyroAxes * 270 * Config.Gamepad.GetSettingValue("gyro vertical scale");
+                    gyroAxes.x *= Config.Gyro.GetSettingPercent("scale x");
+                    originInput += gyroAxes * 270 * Config.Gyro.GetSettingPercent("scale y");
                     return originInput;
                 }
             }
@@ -104,10 +102,6 @@ namespace Gameplay.Entity.Player
         }
 
         public event Action OnJumo;
-        public event Action OnTurnAround;
-        public event Action OnFireStart;
-        public event Action OnFireEnd;
-        public event Action<int> OnSelectWeapon;
         public event Action OnCharge;
 
         [Inject]
@@ -119,33 +113,24 @@ namespace Gameplay.Entity.Player
             
             _actions.Player.Jump.started += OnJumoInvoke;
             _actions.Player.Charge.started += OnChargeInvoke;
-            _actions.Player.Fire.performed += OnFireStartInvoke;
-            _actions.Player.Fire.canceled += OnFireEndInvoke;
 
             Config = settings.Config;
         }
 
         private void OnJumoInvoke(InputAction.CallbackContext _) => OnJumo?.Invoke();
-        private void OnTurnAroundInvoke(InputAction.CallbackContext _) => OnTurnAround?.Invoke();
-        private void OnFireStartInvoke(InputAction.CallbackContext _) => OnFireStart?.Invoke();
-        private void OnFireEndInvoke(InputAction.CallbackContext _) => OnFireEnd?.Invoke();
-        private void OnSelectWeapon1Invoke(InputAction.CallbackContext _) => OnSelectWeapon?.Invoke(0);
-        private void OnSelectWeapon2Invoke(InputAction.CallbackContext _) => OnSelectWeapon?.Invoke(1);
         private void OnChargeInvoke(InputAction.CallbackContext _) => OnCharge?.Invoke();
 
         private void OnDestroy()
         {
             _actions.Player.Jump.started += OnJumoInvoke;
             _actions.Player.Charge.started += OnChargeInvoke;
-            _actions.Player.Fire.performed += OnFireStartInvoke;
-            _actions.Player.Fire.canceled += OnFireEndInvoke;
         }
         
         private Vector2 GetScreenGyroDelta(bool worldSpace)
         {
             Vector3 gyro = DualshockMotion.RawGyro;
             Debug.Log(gyro);
-            gyro += new Vector3(GetDriftCompensation("x"), GetDriftCompensation("y"), GetDriftCompensation("z"));
+            //gyro += new Vector3(GetDriftCompensation("x"), GetDriftCompensation("y"), GetDriftCompensation("z"));
             float xAxisInfluence = DualshockMotion.Accelerometer.y;
             bool invertZ = DualshockMotion.Accelerometer.z > 0;
             

@@ -5,6 +5,7 @@ using Extentions;
 using Input;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using Zenject;
 
 namespace UI
