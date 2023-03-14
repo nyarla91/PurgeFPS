@@ -113,6 +113,7 @@ namespace Extentions
                 index += length;
             while (index >= length)
                 index -= length;
+            
             return index;
         }
 

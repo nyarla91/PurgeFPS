@@ -15,8 +15,8 @@ TagManager:
   - PlayerAttack
   - Enemy
   - EnemyAttack
-  - 
-  - 
+  - CameraOverlay
+  - NeutralTarget
   - 
   - 
   - 

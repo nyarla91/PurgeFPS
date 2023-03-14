@@ -198,7 +198,7 @@ public partial class @MenuActions : IInputActionCollection2, IDisposable
                     ""id"": ""fbf31c95-541f-4a87-b0bc-075756941fcf"",
                     ""path"": ""<Gamepad>/leftStick"",
                     ""interactions"": """",
-                    ""processors"": ""StickDeadzone(min=0.9)"",
+                    ""processors"": ""StickDeadzone(min=0.8)"",
                     ""groups"": """",
                     ""action"": ""Navigate"",
                     ""isComposite"": false,

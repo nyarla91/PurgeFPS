@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using Extentions;
 using UnityEngine;
 using Zenject;
@@ -12,6 +11,7 @@ namespace Gameplay.Entity.Player
         [SerializeField] private float _turnAroundSpeed;
         [SerializeField] private float _standartFOV;
         [SerializeField] private float _zoomFOV;
+        [SerializeField] private float _FOVChangeSpeed;
 
         private Coroutine _turnAroundCoroutine;
         private Transform _cameraTransform;
@@ -20,17 +20,8 @@ namespace Gameplay.Entity.Player
         public Camera Camera => _camera;
         public Transform CameraTransform => _cameraTransform;
 
-        public VisionRaycast Raycast
-        {
-            get
-            {
-                Ray ray = Camera.ScreenPointToRay(new Vector2(Screen.width, Screen.height) / 2);
-                LayerMask mask = LayerMask.GetMask("Enemy", "Obstacle");
-                Physics.Raycast(ray, out RaycastHit raycast, 500, mask);
-                return new VisionRaycast(raycast);
-            }
-        }
-        
+        public Ray LookRay => new Ray(CameraTransform.position, CameraTransform.forward);
+
         [Inject] private Pause Pause { get; set; }
 
         private void TryTurnAround()
@@ -57,7 +48,7 @@ namespace Gameplay.Entity.Player
             delta = delta / _standartFOV * _camera.fieldOfView;
             float verticalAngle = _cameraTransform.localRotation.eulerAngles.x;
             verticalAngle -= delta.y;
-            verticalAngle = verticalAngle.ClampAngle(275, 85);
+            verticalAngle = verticalAngle.ClampAngle(271, 89);
             _cameraTransform.localRotation = Quaternion.Euler(_cameraTransform.localRotation.eulerAngles.WithX(verticalAngle));
             Transform.Rotate(0, delta.x, 0);
         }
@@ -68,15 +59,18 @@ namespace Gameplay.Entity.Player
             Controls.ToggledAim += () => _aiming = !_aiming;
         }
 
-        private void FixedUpdate()
+        private void UpdateFOV()
         {
+            if (Pause.IsPaused)
+                return;
             float targetFOV = _aiming ? _zoomFOV : _standartFOV;
-            _camera.fieldOfView = Mathf.Lerp(_camera.fieldOfView, targetFOV, 0.3f);
+            _camera.fieldOfView = Mathf.MoveTowards(_camera.fieldOfView, targetFOV, _FOVChangeSpeed * Time.deltaTime);
         }
 
         private void Update()
         {
             RotateCamera(Controls.CameraDelta * Time.deltaTime);
+            UpdateFOV();
         }
     }
 

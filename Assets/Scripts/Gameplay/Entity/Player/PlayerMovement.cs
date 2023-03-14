@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using Extentions;
-using Input;
 using UnityEngine;
 using Zenject;
 
@@ -27,14 +26,22 @@ namespace Gameplay.Entity.Player
         [SerializeField] private float _chargeDuration;
         [SerializeField] private AnimationCurve _chargeSpeedCurve;
         [SerializeField] private float _chargeSpeed;
-        [SerializeField] private float _chargeCooldown;
+        [SerializeField] private float _chargeCooldownDuration;
         
         private bool _dashReady = true;
+        private Timer _chargeCooldown;
+
+        public bool ChargeAllowed => ! _chargeCooldown.IsOn;
+        public float ChargeCooldownPercent => _chargeCooldown.TimeElapsed / _chargeCooldown.Length;
+        public bool DashReady => _dashReady;
+        public bool IsGrounded => _movable.IsGrounded;
 
         private Vector3 InputDirectionToWorld => Transform.forward * Lazy.Controls.MovementDelta.y + Transform.right * Lazy.Controls.MovementDelta.x;
         
         [Inject] private Pause Pause { get; set; }
 
+        public void ReadyCharge() => _chargeCooldown.Reset();
+        
         private void Move()
         {
             if (Pause.IsPaused)
@@ -49,18 +56,9 @@ namespace Gameplay.Entity.Player
             _movable.SetHorizontalVelocity(Vector3.MoveTowards(_movable.Velocity, targetVelocity, maxVelocityDelta));
         }
 
-
-        private void Awake()
-        {
-            Lazy.Controls.Jumped += JumpOrDash;
-            Lazy.Controls.Charged += TryCharge;
-
-            _movable.Grounded += () => _dashReady = true;
-        }
-
         private void TryCharge()
         {
-            if ( ! _movementStates.TryEnterState(ChargeState))
+            if (! ChargeAllowed || ! _movementStates.TryEnterState(ChargeState))
                 return;
 
             StartCoroutine(Charge());
@@ -68,6 +66,7 @@ namespace Gameplay.Entity.Player
 
         private IEnumerator Charge()
         {
+            _chargeCooldown.Restart();
             Vector3 direction = Lazy.Vision.CameraTransform.forward;
             for (float i = 0; i < 1; i += Time.fixedDeltaTime / _chargeDuration)
             {
@@ -98,6 +97,15 @@ namespace Gameplay.Entity.Player
                 _movable.Jump(_jumpForce);
             else if (_dashReady && _movementStates.TryEnterState(DashState))
                 StartCoroutine(Dash());
+        }
+
+        private void Awake()
+        {
+            Lazy.Controls.Jumped += JumpOrDash;
+            Lazy.Controls.Charged += TryCharge;
+
+            _movable.Grounded += () => _dashReady = true;
+            _chargeCooldown = new Timer(this, _chargeCooldownDuration, Pause);
         }
 
         private void FixedUpdate()

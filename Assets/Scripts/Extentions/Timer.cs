@@ -61,7 +61,7 @@ namespace Extentions
 
         public void Restart()
         {
-            Stop();
+            Reset();
             Start();
         }
 

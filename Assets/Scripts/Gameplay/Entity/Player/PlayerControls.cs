@@ -28,7 +28,6 @@ namespace Gameplay.Entity.Player
                 input = ApplyDeadzone(input);
                 input = InvertAxes(input);
                 input = ApplySensivity(input);
-                //input = ApplyAimAssist(input);
                 input = ApplyGyro(input);
                 
                 return input;
@@ -55,25 +54,6 @@ namespace Gameplay.Entity.Player
                     originInput *= new Vector2(Config.Gamepad.GetSettingValue("sensitivity x"), Config.Gamepad.GetSettingValue("sensitivity y")) * 6;
                     return originInput;
                 }
-
-                Vector2 ApplyAimAssist(Vector2 originInput)
-                {
-                    if (Config.Gamepad.IsSettingToggled("gyro enabled"))
-                        return originInput;
-                    
-                    VisionRaycast raycast = Lazy.Vision.Raycast;
-                    float hitDistance = raycast.Raycast.distance;
-                    if (raycast.Layer == 9 && hitDistance > 0)
-                    {
-                        float sensivityReduction = 0.6f * Config.Gamepad.GetSettingValue("aim assist");
-                        const float MinDistance = 30;
-                        const float MaxDistance = 150;
-                        sensivityReduction *= Mathf.Clamp((hitDistance - MinDistance) / (MaxDistance - MinDistance), 0, 1);
-                        originInput *= 1 - sensivityReduction;
-                    }
-
-                    return originInput;
-                }
                 
                 Vector2 ApplyGyro(Vector2 originInput)
                 {
@@ -81,11 +61,12 @@ namespace Gameplay.Entity.Player
                         return originInput;
                     
                     Vector2 gyroAxes = GetScreenGyroDelta(Config.Gyro.IsSettingToggled("world space"));
-                    if (gyroAxes.magnitude < Config.Gyro.GetSettingValue("deadzone"))
+                    if (gyroAxes.magnitude < Config.Gyro.GetSettingValue("deadzone") * 0.015f)
                         return originInput;
                     
-                    gyroAxes.x *= Config.Gyro.GetSettingPercent("scale x");
-                    originInput += gyroAxes * 270 * Config.Gyro.GetSettingPercent("scale y");
+                    gyroAxes *= new Vector2(Config.Gyro.GetSettingPercent("scale x"), Config.Gyro.GetSettingPercent("scale y"));
+                    originInput += gyroAxes * 270;
+                    print(gyroAxes);
                     return originInput;
                 }
             }
@@ -103,6 +84,9 @@ namespace Gameplay.Entity.Player
         public event Action Jumped;
         public event Action Charged;
         public event Action ToggledAim;
+        public event Action ChangedWeapon;
+        public event Action StartFire;
+        public event Action EndFire;
         
         [Inject] private DeviceWatcher DeviceWatcher { get; set; }
         [Inject] private Pause Pause { get; set; }
@@ -117,8 +101,18 @@ namespace Gameplay.Entity.Player
             _actions.Player.Charge.started += ChargedInvoke;
             _actions.Player.Aim.started += ToggledAimInvoke;
             _actions.Player.Aim.canceled += ToggledAimInvoke;
+            _actions.Player.ChangeWeapon.started += ChangedWeaponInvoke;
+            _actions.Player.Fire.started += StartFireInvoke;
+            _actions.Player.Fire.canceled += EndFireInvoke;
 
             Config = settings.Config;
+        }
+
+        private void ChangedWeaponInvoke(InputAction.CallbackContext obj)
+        {
+            if (Pause.IsPaused)
+                return;
+            ChangedWeapon?.Invoke();
         }
 
         private void JumoedInvoke(InputAction.CallbackContext _)
@@ -136,6 +130,14 @@ namespace Gameplay.Entity.Player
         }
 
         private void ToggledAimInvoke(InputAction.CallbackContext _) => ToggledAim?.Invoke();
+        private void StartFireInvoke(InputAction.CallbackContext _)
+        {
+            if (Pause.IsPaused)
+                return;
+            StartFire?.Invoke();
+        }
+
+        private void EndFireInvoke(InputAction.CallbackContext _) => EndFire?.Invoke();
 
         private void OnDestroy()
         {
@@ -143,13 +145,14 @@ namespace Gameplay.Entity.Player
             _actions.Player.Charge.started -= ChargedInvoke;
             _actions.Player.Aim.started -= ToggledAimInvoke;
             _actions.Player.Aim.canceled -= ToggledAimInvoke;
+            _actions.Player.ChangeWeapon.started -= ChangedWeaponInvoke;
+            _actions.Player.Fire.started -= StartFireInvoke;
+            _actions.Player.Fire.canceled -= EndFireInvoke;
         }
         
         private Vector2 GetScreenGyroDelta(bool worldSpace)
         {
             Vector3 gyro = DualshockMotion.RawGyro;
-            Debug.Log(gyro);
-            //gyro += new Vector3(GetDriftCompensation("x"), GetDriftCompensation("y"), GetDriftCompensation("z"));
             float xAxisInfluence = DualshockMotion.Accelerometer.y;
             bool invertZ = DualshockMotion.Accelerometer.z > 0;
             
