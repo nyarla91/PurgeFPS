@@ -4,13 +4,18 @@ namespace Input
 {
     public static class DualshockMotion
     {
+        private static Vector3 _rawGyro;
 
         public static bool IsUsed { get; set; }
 
         /// <summary>
         /// Uncalibrated gyro euler axes
         /// </summary>
-        public static Vector3 RawGyro { get; private set; }
+        public static Vector3 RawGyro
+        {
+            get => IsUsed ? _rawGyro : Vector3.zero;
+            private set => _rawGyro = value;
+        }
 
         public static Vector3 Accelerometer { get; private set; }
 

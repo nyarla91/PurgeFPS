@@ -10,6 +10,9 @@ namespace Gameplay.Entity.Player
 {
     public class PlayerControls : LazyGetComponent<PlayerComposition>
     {
+        [SerializeField] private AnimationCurve _linearJoystickCurve;
+        [SerializeField] private AnimationCurve _exponentialJoystickCurve;
+        [SerializeField] private AnimationCurve _dualzoneJoystickCurve;
         private GameplayActions _actions;
         public SettingsConfig Config { get; private set; }
 
@@ -26,6 +29,7 @@ namespace Gameplay.Entity.Player
                 }
 
                 input = ApplyDeadzone(input);
+                input = ApplyResponseCurve(input);
                 input = InvertAxes(input);
                 input = ApplySensivity(input);
                 input = ApplyGyro(input);
@@ -38,6 +42,20 @@ namespace Gameplay.Entity.Player
                     if (originInput.magnitude * 100 < Config.Gamepad.GetSettingValue("deadzone"))
                         originInput = Vector2.zero;
                     return originInput;
+                }
+
+                Vector2 ApplyResponseCurve(Vector2 originInput)
+                {
+                    AnimationCurve curve = Config.Gamepad.GetSettingValue("response curve") switch
+                    {
+                        1 => _exponentialJoystickCurve,
+                        2 => _dualzoneJoystickCurve,
+                        _ => _linearJoystickCurve,
+                    };
+                    float magnitude = curve.Evaluate(originInput.magnitude);
+                    print(magnitude);
+                    originInput.SetMagnitude(magnitude);
+                    return originInput.SetMagnitude(magnitude);
                 }
 
                 Vector2 InvertAxes(Vector2 originInput)
@@ -66,7 +84,6 @@ namespace Gameplay.Entity.Player
                     
                     gyroAxes *= new Vector2(Config.Gyro.GetSettingPercent("scale x"), Config.Gyro.GetSettingPercent("scale y"));
                     originInput += gyroAxes * 270;
-                    print(gyroAxes);
                     return originInput;
                 }
             }
@@ -162,8 +179,6 @@ namespace Gameplay.Entity.Player
                 delta.x = -gyro.y * xAxisInfluence + (gyro.z * (1 - xAxisInfluence)) * (invertZ ? -1 : 1);
             }
             return delta;
-
-            float GetDriftCompensation(string axis) => Config.Gamepad.GetSettingValue($"gyro drift compensation {axis}");
         }
     }
 }

@@ -14,6 +14,8 @@ namespace Input
         private InputScheme _currentInputScheme = InputScheme.None;
         private UIScheme _currentUIScheme = UIScheme.None;
         private GamepadModel _currentGamepadModel = GamepadModel.None;
+
+        private bool _joyshockInit;
         
         public InputScheme CurrentInputScheme
         {
@@ -86,6 +88,8 @@ namespace Input
         private void SwitchToKeyboard(InputAction.CallbackContext context)
         {
             CurrentInputScheme = InputScheme.KeyboardMouse;
+            DualshockMotion.IsUsed = false;
+            DisposeJoyshock();
         }
 
         private void SwitchToMouse(InputAction.CallbackContext context)
@@ -93,6 +97,7 @@ namespace Input
             CurrentInputScheme = InputScheme.KeyboardMouse;
             CurrentUIScheme = UIScheme.Pointer;
             DualshockMotion.IsUsed = false;
+            DisposeJoyshock();
         }
 
         private void SwitchToGamepad(InputAction.CallbackContext context)
@@ -108,6 +113,10 @@ namespace Input
                 _ => GamepadModel.Xbox
             };
             DualshockMotion.IsUsed = CurrentGamepadModel == GamepadModel.PlayStation;
+            if (CurrentGamepadModel == GamepadModel.PlayStation)
+                InitJoyshock();
+            else
+                DisposeJoyshock();
         }
 
         private void SwitchToDualshock(InputAction.CallbackContext context)
@@ -118,11 +127,14 @@ namespace Input
             DualshockMotion.IsUsed = true;
         }
 
-        private static void InitJoyshock()
+        private void InitJoyshock()
         {
+            if (_joyshockInit)
+                return;
             int size = JSL.JslConnectDevices();
             if (size == 0)
                 return;
+            _joyshockInit = true;
             int[] devices = new int[size];
             JSL.JslGetConnectedDeviceHandles(devices, size);
             int handle = devices[0];
@@ -131,7 +143,15 @@ namespace Input
 
         private void OnDestroy()
         {
+            DisposeJoyshock();
+        }
+
+        private void DisposeJoyshock()
+        {
+            if ( ! _joyshockInit)
+                return;
             JSL.JslDisconnectAndDisposeAll();
+            _joyshockInit = false;
         }
     }
 

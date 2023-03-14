@@ -115,6 +115,8 @@ MonoBehaviour:
           _value: 0
         - _key: deadzone
           _value: 10
+        - _key: response curve
+          _value: 0
     _gyro:
       _settings:
         _dynamic: 1
