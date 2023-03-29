@@ -4,7 +4,7 @@ using Zenject;
 
 namespace Gameplay.Entity
 {
-    public class VitalsPool : MonoBehaviour
+    public class VitalsPool : MonoBehaviour, IHittable
     {
         [SerializeField] private Resource _health;
         [SerializeField] private float _shieldRegenreration;
@@ -20,6 +20,11 @@ namespace Gameplay.Entity
             _health.Value = _health.MaxValue = health;
             _shieldRegenreration = shieldsRegeneration;
             IsDead = false;
+        }
+
+        public void TakeHit()
+        {
+            TakeDamage(1);
         }
 
         public void TakeDamage(float damage)

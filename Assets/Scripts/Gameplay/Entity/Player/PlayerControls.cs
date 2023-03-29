@@ -53,7 +53,6 @@ namespace Gameplay.Entity.Player
                         _ => _linearJoystickCurve,
                     };
                     float magnitude = curve.Evaluate(originInput.magnitude);
-                    print(magnitude);
                     originInput.SetMagnitude(magnitude);
                     return originInput.SetMagnitude(magnitude);
                 }

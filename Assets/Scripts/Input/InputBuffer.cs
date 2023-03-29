@@ -22,13 +22,15 @@ namespace Input
 
         public bool PerformAllowed { get; set; }
 
-        public event Action OnPerformed;
+        public event Action Performed;
+        public event Action Expired;
 
         public InputBuffer(MonoBehaviour container, float timeWindow)
         {
             _timeWindow = timeWindow;
             _timer = new Timer(container, timeWindow);
             _timer.Ticked += CheckAvialability;
+            _timer.Expired += () => Expired?.Invoke();
         }
 
         public void SendInput(InputAction.CallbackContext context) => SendInput();
@@ -38,20 +40,24 @@ namespace Input
             _timer.Stop();
             if (PerformAllowed)
             {
-                OnPerformed?.Invoke();
+                Performed?.Invoke();
                 return;
             }
             _timer.Restart();
         }
 
-        public void InterruptBuffering() => _timer.Stop();
+        public void InterruptBuffering()
+        {
+            _timer.Stop();
+            Expired?.Invoke();
+        }
 
         private void CheckAvialability(float irrelevant)
         {
             if (!PerformAllowed)
                 return;
             
-            OnPerformed?.Invoke();
+            Performed?.Invoke();
             _timer.Stop();
         }
     }

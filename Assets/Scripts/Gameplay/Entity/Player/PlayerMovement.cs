@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using Extentions;
+using Input;
 using UnityEngine;
 using Zenject;
 
@@ -17,7 +18,9 @@ namespace Gameplay.Entity.Player
         [SerializeField] private float _acceleration;
         [Space]
         [SerializeField] [Range(0, 1)] private float _airAccelerationMultiplier;
+        [SerializeField] [Range(1, 3)] private float _airMaxSpeedMultiplier;
         [SerializeField] private float _jumpForce;
+        [SerializeField] private float _jumpBufferTime;
         [Space]
         [SerializeField] private float _dashDuration;
         [SerializeField] private AnimationCurve _dashSpeedCurve;
@@ -30,6 +33,7 @@ namespace Gameplay.Entity.Player
         
         private bool _dashReady = true;
         private Timer _chargeCooldown;
+        private InputBuffer _jumpBuffer;
 
         public bool ChargeAllowed => ! _chargeCooldown.IsOn;
         public float ChargeCooldownPercent => _chargeCooldown.TimeElapsed / _chargeCooldown.Length;
@@ -50,7 +54,7 @@ namespace Gameplay.Entity.Player
                 return;
             
             Vector3 targetVelocity = InputDirectionToWorld;
-            targetVelocity *= _maxSpeed;
+            targetVelocity *= _movable.IsGrounded ? _maxSpeed : (_maxSpeed * _airMaxSpeedMultiplier);
             float maxVelocityDelta = _movable.IsGrounded ? _acceleration : (_acceleration * _airAccelerationMultiplier);
 
             _movable.SetHorizontalVelocity(Vector3.MoveTowards(_movable.Velocity, targetVelocity, maxVelocityDelta));
@@ -88,29 +92,40 @@ namespace Gameplay.Entity.Player
             _movementStates.TryExitState(DashState);
         }
 
-        private void JumpOrDash()
+        private void TryJump()
+        {
+            if (Pause.IsPaused)
+                return;
+            if (_movable.IsGrounded)
+                _movable.Jump(_jumpForce);
+        }
+
+        private void TryDash()
         {
             if (Pause.IsPaused)
                 return;
             
-            if (_movable.IsGrounded)
-                _movable.Jump(_jumpForce);
-            else if (_dashReady && _movementStates.TryEnterState(DashState))
+            if (_dashReady && _movementStates.TryEnterState(DashState))
                 StartCoroutine(Dash());
         }
 
         private void Awake()
         {
-            Lazy.Controls.Jumped += JumpOrDash;
             Lazy.Controls.Charged += TryCharge;
 
             _movable.Grounded += () => _dashReady = true;
             _chargeCooldown = new Timer(this, _chargeCooldownDuration, Pause);
+
+            _jumpBuffer = new InputBuffer(this, _jumpBufferTime);
+            Lazy.Controls.Jumped += _jumpBuffer.SendInput;
+            _jumpBuffer.Performed += TryJump;
+            _jumpBuffer.Expired += TryDash;
         }
 
         private void FixedUpdate()
         {
             Move();
+            _jumpBuffer.PerformAllowed = _movable.IsGrounded;
         }
     }
 }
